@@ -1,0 +1,33 @@
+TEST 1:
+	list comprehension
+	recursion
+	
+TEST 2:
+	making own data structures
+	currying
+	
+TEST 3:
+	Interpreter/Parsing/Evaluating
+		Don't have to make a parser, just be able to use it
+		
+		
+		
+for hw:
+	define expression
+	define eval
+	
+	
+	token 'A' "ABC" => [('A',"BC")]
+	tokens "AB" "ABC" => [("AB","C")]
+	
+	expr = 2 >*> 3     -> read as (2,3)
+
+		\build` (\(x,y) ->
+		
+	expr = 2 >*> 3 >*> 4     -> read as (2,(3,4))
+	
+	
+	stmt -> int var ; | var = expr ; | while ( cond ) stmt | {list stmt} | if ( condition ) stmt else stmt |
+	
+	
+	list (token 'A') "AAA" => [('',"AAA")]...[("AAA","")]
