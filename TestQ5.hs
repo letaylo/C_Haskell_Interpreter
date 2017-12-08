@@ -178,7 +178,7 @@ cond = ((token '(' <*< expr >*> token '<' <*< expr >*< token ')') `build` (\(x,y
 	   ((token '(' <*< expr >*> tokens "!=" <*< expr >*< token ')') `build` (\(x,y) -> NotEqual x y)) `alt`
 	   ((token '(' <*< cond >*> tokens "&&" <*< cond >*< token ')') `build` (\(x,y) -> And x y)) `alt`
 	   ((token '(' <*< cond >*> tokens "||" <*< cond >*< token ')') `build` (\(x,y) -> Or x y)) `alt`
-	   (token '(' <*< token '!' <*< cond >*< token ')') `build` (\x -> Not x)
+	   ((token '(' <*< token '!' <*< cond >*< token ')') `build` (\x -> Not x))
 
 -- This parses an expression and stores the result
 expr :: Parse Char Expression
