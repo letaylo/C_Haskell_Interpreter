@@ -96,7 +96,7 @@ This function will return the memory when the program is completed
 -}
 run :: String -> Memory
 -- fill in your code here
-run _ = []
+run string = evalStmt (parse stmt string) []
 
 {-
 To evaluate a statement you give
