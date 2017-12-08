@@ -107,17 +107,18 @@ It returns the memory after the statement is executed
 evalStmt :: Statement -> Memory -> Memory 
 evalStmt stmt mem | trace ("evalStmt \n" ++ show stmt ++ "  " ++ show mem) False = undefined
 -- fill in your code here
-evalStmt (Declare var) mem = (show var, 0):mem
-evalStmt (Assign var x) mem
-  | (show var, 0) `elem` mem = (show var, read $ show x):mem
+evalStmt (Declare v) mem = (show ( Just v), 0):mem
+evalStmt (Assign v x) mem
+  | (show (Just v), 0) `elem` mem = (show (Just v), read $ show x):mem
   | otherwise                = error err
-    where err = "Variable " ++ show var ++ " not declared!"
+    where err = "Variable " ++ show (Just v) ++ " not declared!"
 evalStmt (IfElse c ifT ifF) mem = if (evalCond c mem) then (evalStmt ifT mem) else (evalStmt ifF mem)
 evalStmt (While c s) mem
   | evalCond c mem = evalStmt (While c s) (evalStmt s mem)
   | otherwise      = mem
 evalStmt (Block []) mem = mem
-evalStmt (Block (x:xs)) mem = (evalStmt x (evalStmt (Block xs) mem))
+evalStmt (Block (x:xs)) mem = evalStmt (Block xs) (evalStmt x mem)
+--evalStmt (Block xs) mem = foldl (evalStmt xs mem)
 {-
 To evaluate a condition you give
   1. the condition
@@ -159,11 +160,11 @@ evalExp (Var v) mem
 -- This parses a statement and stores the result
 stmt :: Parse Char Statement
 -- fill in your code here
-stmt = ((token '(' <*< tokens "int" <*< var >*< tokens ";)") `build` (\x -> Declare x)) `alt`
-       ((token '(' <*< var >*> token '=' <*< expr >*< tokens ";)") `build` (\(x,y) -> Assign x y)) `alt`
-	   ((tokens "({" <*< list stmt >*< tokens "})") `build` (\x -> Block x)) `alt`
-	   ((tokens "((while" <*< cond >*> token ')' <*< stmt >*< token ')') `build` (\(x,y) -> While x y)) `alt`
-	   ((tokens "(if(" <*< cond >*> token ')' <*< stmt >*> tokens "(else)" <*< stmt >*< token ')') `build` (\(x,(y,z)) -> IfElse x y z))
+stmt = ((tokens "int" <*< var >*< token ';') `build` (\x -> Declare x)) `alt`
+       ((var >*> token '=' <*< expr >*< token ';') `build` (\(x,y) -> Assign x y)) `alt`
+	   ((token '{' <*< list stmt >*< token '}') `build` (\x -> Block x)) `alt`
+	   ((tokens "while(" <*< cond >*> token ')' <*< stmt) `build` (\(x,y) -> While x y)) `alt`
+	   ((tokens "if(" <*< cond >*> token ')' <*< stmt >*> tokens "else" <*< stmt) `build` (\(x,(y,z)) -> IfElse x y z))
 
 -- This parses a condition and stores the result
 cond :: Parse Char Condition
@@ -171,7 +172,7 @@ cond :: Parse Char Condition
 cond = ((token '(' <*< expr >*> token '<' <*< expr >*< token ')') `build` (\(x,y) -> Less x y)) `alt`
        ((token '(' <*< expr >*> token '>' <*< expr >*< token ')') `build` (\(x,y) -> Greater x y)) `alt`
 	   ((token '(' <*< expr >*> tokens "<=" <*< expr >*< token ')') `build` (\(x,y) -> LessEq x y)) `alt`
-	   ((token '(' <*< expr >*> tokens "<=" <*< expr >*< token ')') `build` (\(x,y) -> GreaterEq x y)) `alt`
+	   ((token '(' <*< expr >*> tokens ">=" <*< expr >*< token ')') `build` (\(x,y) -> GreaterEq x y)) `alt`
 	   ((token '(' <*< expr >*> tokens "==" <*< expr >*< token ')') `build` (\(x,y) -> Equal x y)) `alt`
 	   ((token '(' <*< expr >*> tokens "!=" <*< expr >*< token ')') `build` (\(x,y) -> NotEqual x y)) `alt`
 	   ((token '(' <*< cond >*> tokens "&&" <*< cond >*< token ')') `build` (\(x,y) -> And x y)) `alt`
@@ -181,16 +182,44 @@ cond = ((token '(' <*< expr >*> token '<' <*< expr >*< token ')') `build` (\(x,y
 -- This parses an expression and stores the result
 expr :: Parse Char Expression
 -- fill in your code here
-expr = num `alt` var `alt`
+expr = m >*>> expr'
+
+expr' :: Expression -> Parse Char Expression
+expr' x = succeed x `alt`
+          (((token '+' <*< m) `build` (\y -> Plus x y)) >*>> expr')
+		  
+m :: Parse Char Expression
+m = t >*>> m'
+
+m' :: Expression -> Parse Char Expression
+m' x = succeed x `alt`
+      (((token '-' <*< t) `build` (\y -> Minus x y)) >*>> expr')
+		  
+t :: Parse Char Expression
+t = d >*>> t'
+
+t' :: Expression -> Parse Char Expression
+t' x = succeed x `alt`
+       (((token '*' <*< d) `build` (\y -> Times x y)) >*>> t')
+	   
+d :: Parse Char Expression
+d = f >*>> d'
+
+d' :: Expression -> Parse Char Expression
+d' x = succeed x `alt`
+	   (((token '/' <*< f) `build` (\y -> Divide x y)) >*>> t')
+	   
+f :: Parse Char Expression
+f = var `alt` num `alt` (token '(' <*< expr >*< token ')')
+{-expr = num `alt` var `alt`
        ((token '(' <*< expr >*> token '+' <*< expr >*< token ')') `build` (\(x,y) -> Plus x y)) `alt`
 	   ((token '(' <*< expr >*> token '-' <*< expr >*< token ')') `build` (\(x,y) -> Minus x y)) `alt`
 	   ((token '(' <*< expr >*> token '*' <*< expr >*< token ')') `build` (\(x,y) -> Times x y)) `alt`
 	   ((token '(' <*< expr >*> token '/' <*< expr >*< token ')') `build` (\(x,y) -> Divide x y))
-
+-}
+	   
 num :: Parse Char Expression
-num = (spot isDigit >*> (list (spot isDigit))) `build` (uncurry (:))
-      `build` (\x -> Num (read x :: Int))
+num = (spot isDigit >*> (list (spot isDigit))) `build` (uncurry (:)) `build` (\x -> Num (read x :: Int))
 
 var :: Parse Char Expression
-var = (spot isAlpha >*> (list (spot isAlpha))) `build` (uncurry (:))
-      `build` Var
+var = (spot isAlpha >*> (list (spot isAlpha))) `build` (uncurry (:)) `build` Var
