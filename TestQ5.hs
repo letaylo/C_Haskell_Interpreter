@@ -107,8 +107,17 @@ It returns the memory after the statement is executed
 evalStmt :: Statement -> Memory -> Memory 
 evalStmt stmt mem | trace ("evalStmt \n" ++ show stmt ++ "  " ++ show mem) False = undefined
 -- fill in your code here
-evalStmt _ _ = []
-
+evalStmt (Declare var) mem = (show var, 0):mem
+evalStmt (Assign var x) mem
+  | (show var, 0) `elem` mem = (show var, read $ show x):mem
+  | otherwise                = error err
+    where err = "Variable " ++ show var ++ " not declared!"
+evalStmt (IfElse c ifT ifF) mem = if (evalCond c mem) then (evalStmt ifT mem) else (evalStmt ifF mem)
+evalStmt (While c s) mem
+  | evalCond c mem = evalStmt (While c s) (evalStmt s mem)
+  | otherwise      = mem
+evalStmt (Block []) mem = mem
+evalStmt (Block (x:xs)) mem = (evalStmt x (evalStmt (Block xs) mem))
 {-
 To evaluate a condition you give
   1. the condition
@@ -152,7 +161,7 @@ stmt :: Parse Char Statement
 -- fill in your code here
 stmt = ((token '(' <*< tokens "int" <*< var >*< tokens ";)") `build` (\x -> Declare x)) `alt`
        ((token '(' <*< var >*> token '=' <*< expr >*< tokens ";)") `build` (\(x,y) -> Assign x y)) `alt`
-	   ((tokens "({" <*< [stmt] >*< tokens "})") `build` (\xs -> Block xs)) `alt`
+	   ((tokens "({" <*< list stmt >*< tokens "})") `build` (\x -> Block x)) `alt`
 	   ((tokens "((while" <*< cond >*> token ')' <*< stmt >*< token ')') `build` (\(x,y) -> While x y)) `alt`
 	   ((tokens "(if(" <*< cond >*> token ')' <*< stmt >*> tokens "(else)" <*< stmt >*< token ')') `build` (\(x,(y,z)) -> IfElse x y z))
 
