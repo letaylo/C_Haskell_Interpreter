@@ -150,7 +150,11 @@ evalExp (Var v) mem
 -- This parses a statement and stores the result
 stmt :: Parse Char Statement
 -- fill in your code here
-stmt = \s -> []
+stmt = ((token '(' <*< tokens "int" <*< var >*< tokens ";)") `build` (\x -> Declare x)) `alt`
+       ((token '(' <*< var >*> token '=' <*< expr >*< tokens ";)") `build` (\(x,y) -> Assign x y)) `alt`
+	   ((tokens "({" <*< [stmt] >*< tokens "})") `build` (\xs -> Block xs)) `alt`
+	   ((tokens "((while" <*< cond >*> token ')' <*< stmt >*< token ')') `build` (\(x,y) -> While x y)) `alt`
+	   ((tokens "(if(" <*< cond >*> token ')' <*< stmt >*> tokens "(else)" <*< stmt >*< token ')') `build` (\(x,(y,z)) -> IfElse x y z))
 
 -- This parses a condition and stores the result
 cond :: Parse Char Condition
