@@ -105,7 +105,7 @@ To evaluate a statement you give
 It returns the memory after the statement is executed
 -}
 evalStmt :: Statement -> Memory -> Memory 
-evalStmt stmt mem | trace ("evalStmt \n" ++ show stmt ++ "  " ++ show mem) False = undefined
+--evalStmt stmt mem | trace ("evalStmt \n" ++ show stmt ++ "  " ++ show mem) False = undefined
 -- fill in your code here
 evalStmt (Declare (Var v)) mem = (v, 0):mem
 evalStmt (Assign (Var v) x) mem
@@ -170,6 +170,69 @@ stmt = ((tokens "int" <*< var >*< token ';') `build` (\x -> Declare x)) `alt`
 -- This parses a condition and stores the result
 cond :: Parse Char Condition
 -- fill in your code here
+{-cond = g >*>> cond'
+
+cond' :: Condition -> Parse Char Condition
+cond' x = succeed x `alt`
+          (((token '<' <*< g) `build` (\ -> Less x y)) >*>> cond')
+		  
+g :: Parse Char Condition
+g = lt >*>> g'
+
+g' :: Condition -> Parse Char Condition
+g' x = succeed x `alt`
+          (((token '>' <*< le) `build` (\ -> Greater x y)) >*>> g')
+		  
+le :: Parse Char Condition
+le = ge >*>> le'
+
+le' :: Condition -> Parse Char Condition
+le' x = succeed x `alt`
+          (((tokens "<=" <*< ge) `build` (\ -> LessEq x y)) >*>> le')
+		  
+ge :: Parse Char Condition
+ge = eq >*>> ge'
+
+ge' :: Condition -> Parse Char Condition
+ge' x = succeed x `alt`
+          (((tokens ">=" <*< eq) `build` (\ -> GreaterEq x y)) >*>> ge')
+		  
+eq :: Parse Char Condition
+eq = ne >*>> eq'
+
+eq' :: Condition -> Parse Char Condition
+eq' x = succeed x `alt`
+          (((tokens "==" <*< ne) `build` (\ -> Equal x y)) >*>> eq')
+		  
+ne :: Parse Char Condition
+ne = aa >*>> ne'
+
+ne' :: Condition -> Parse Char Condition
+ne' x = succeed x `alt`
+          (((tokens "!=" <*< aa) `build` (\ -> NotEqual x y)) >*>> ne')
+		  
+aa :: Parse Char Condition
+aa = oo >*>> aa'
+
+aa' :: Condition -> Parse Char Condition
+aa' x = succeed x `alt`
+          (((tokens "&&" <*< oo) `build` (\ -> And x y)) >*>> aa')
+		  
+oo :: Parse Char Condition
+oo = nn >*>> oo'
+
+oo' :: Condition -> Parse Char Condition
+oo' x = succeed x `alt`
+          (((tokens "||" <*< nn) `build` (\ -> Or x y)) >*>> oo')
+		  
+nn :: Parse Char Condition
+nn = ff >*>> nn'
+
+nn' :: Condition -> Parse Char Condition
+nn' x = succeed x `alt`
+          (((token '!' <*< ff) `build` (\ -> Not x )) >*>> nn')
+		  
+-}
 cond = ((token '(' <*< expr >*> token '<' <*< expr >*< token ')') `build` (\(x,y) -> Less x y)) `alt`
        ((token '(' <*< expr >*> token '>' <*< expr >*< token ')') `build` (\(x,y) -> Greater x y)) `alt`
 	   ((token '(' <*< expr >*> tokens "<=" <*< expr >*< token ')') `build` (\(x,y) -> LessEq x y)) `alt`
