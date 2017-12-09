@@ -164,84 +164,46 @@ stmt :: Parse Char Statement
 stmt = ((tokens "int" <*< var >*< token ';') `build` (\x -> Declare x)) `alt`
        ((var >*> token '=' <*< expr >*< token ';') `build` (\(x,y) -> Assign x y)) `alt`
 	   ((token '{' <*< list stmt >*< token '}') `build` (\x -> Block x)) `alt`
-	   ((tokens "while" <*< cond >*> stmt) `build` (\(x,y) -> While x y)) `alt`
-	   ((tokens "if" <*< cond >*> stmt >*> tokens "else" <*< stmt) `build` (\(x,(y,z)) -> IfElse x y z))
+	   ((tokens "while(" <*< cond >*> token ')' <*< stmt) `build` (\(x,y) -> While x y)) `alt`
+	   ((tokens "if(" <*< cond >*> token ')' <*< stmt >*> tokens "else" <*< stmt) `build` (\(x,(y,z)) -> IfElse x y z))
 
 -- This parses a condition and stores the result
 cond :: Parse Char Condition
 -- fill in your code here
-{-cond = g >*>> cond'
+{-cond = nn >*>> cond'
 
 cond' :: Condition -> Parse Char Condition
 cond' x = succeed x `alt`
-          (((token '<' <*< g) `build` (\ -> Less x y)) >*>> cond')
-		  
-g :: Parse Char Condition
-g = lt >*>> g'
+          ((token '(' <*< nn >*< token ')') >*>> cond')
 
-g' :: Condition -> Parse Char Condition
-g' x = succeed x `alt`
-          (((token '>' <*< le) `build` (\ -> Greater x y)) >*>> g')
-		  
-le :: Parse Char Condition
-le = ge >*>> le'
+nn :: Parse Char Condition -}
+cond = aa >*>> cond'
 
-le' :: Condition -> Parse Char Condition
-le' x = succeed x `alt`
-          (((tokens "<=" <*< ge) `build` (\ -> LessEq x y)) >*>> le')
-		  
-ge :: Parse Char Condition
-ge = eq >*>> ge'
-
-ge' :: Condition -> Parse Char Condition
-ge' x = succeed x `alt`
-          (((tokens ">=" <*< eq) `build` (\ -> GreaterEq x y)) >*>> ge')
-		  
-eq :: Parse Char Condition
-eq = ne >*>> eq'
-
-eq' :: Condition -> Parse Char Condition
-eq' x = succeed x `alt`
-          (((tokens "==" <*< ne) `build` (\ -> Equal x y)) >*>> eq')
-		  
-ne :: Parse Char Condition
-ne = aa >*>> ne'
-
-ne' :: Condition -> Parse Char Condition
-ne' x = succeed x `alt`
-          (((tokens "!=" <*< aa) `build` (\ -> NotEqual x y)) >*>> ne')
+cond' :: Condition -> Parse Char Condition
+cond' x = succeed x `alt`
+          (((token '!' <*< aa) `build` (\y -> Not y)) >*>> cond')
 		  
 aa :: Parse Char Condition
 aa = oo >*>> aa'
 
 aa' :: Condition -> Parse Char Condition
 aa' x = succeed x `alt`
-          (((tokens "&&" <*< oo) `build` (\ -> And x y)) >*>> aa')
-		  
+          (((tokens "&&" <*< oo) `build` (\y -> And x y)) >*>> aa')
+
 oo :: Parse Char Condition
-oo = nn >*>> oo'
+oo = ff >*>> oo'
 
 oo' :: Condition -> Parse Char Condition
 oo' x = succeed x `alt`
-          (((tokens "||" <*< nn) `build` (\ -> Or x y)) >*>> oo')
+          (((tokens "||" <*< ff) `build` (\y -> Or x y)) >*>> oo')
 		  
-nn :: Parse Char Condition
-nn = ff >*>> nn'
-
-nn' :: Condition -> Parse Char Condition
-nn' x = succeed x `alt`
-          (((token '!' <*< ff) `build` (\ -> Not x )) >*>> nn')
-		  
--}
-cond = ((token '(' <*< expr >*> token '<' <*< expr >*< token ')') `build` (\(x,y) -> Less x y)) `alt`
-       ((token '(' <*< expr >*> token '>' <*< expr >*< token ')') `build` (\(x,y) -> Greater x y)) `alt`
-	   ((token '(' <*< expr >*> tokens "<=" <*< expr >*< token ')') `build` (\(x,y) -> LessEq x y)) `alt`
-	   ((token '(' <*< expr >*> tokens ">=" <*< expr >*< token ')') `build` (\(x,y) -> GreaterEq x y)) `alt`
-	   ((token '(' <*< expr >*> tokens "==" <*< expr >*< token ')') `build` (\(x,y) -> Equal x y)) `alt`
-	   ((token '(' <*< expr >*> tokens "!=" <*< expr >*< token ')') `build` (\(x,y) -> NotEqual x y)) `alt`
-	   ((token '(' <*< cond >*> tokens "&&" <*< cond >*< token ')') `build` (\(x,y) -> And x y)) `alt`
-	   ((token '(' <*< cond >*> tokens "||" <*< cond >*< token ')') `build` (\(x,y) -> Or x y)) `alt`
-	   ((token '(' <*< token '!' <*< cond >*< token ')') `build` (\x -> Not x))
+ff :: Parse Char Condition
+ff = ((expr >*> token '<' <*< expr) `build` (\(a,b) -> Less a b)) `alt`
+	 ((expr >*> token '>' <*< expr) `build` (\(a,b) -> Greater a b)) `alt`
+	 ((expr >*> tokens "<=" <*< expr) `build` (\(a,b) -> LessEq a b)) `alt`
+	 ((expr >*> tokens ">=" <*< expr) `build` (\(a,b) -> GreaterEq a b)) `alt`
+	 ((expr >*> tokens "==" <*< expr) `build` (\(a,b) -> Equal a b)) `alt`
+	 ((expr >*> tokens "!=" <*< expr) `build` (\(a,b) -> NotEqual a b))
 
 -- This parses an expression and stores the result
 expr :: Parse Char Expression
